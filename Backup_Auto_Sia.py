@@ -1,7 +1,5 @@
 import pymysql
 import os
-import re
-import sys
 
 connection = pymysql.connect(host='localhost',
                              user='root',
@@ -100,7 +98,3 @@ try:
                        '" OPTIONALLY ENCLOSED BY "" escaped BY "" LINES TERMINATED BY "\\n"', {'path': filepath})
 finally:
     connection.close()
-
-# sql = sys.stdin.read()
-# regex = re.compile(r'/\*![^\n]* \*/;\n', re.M)
-# print(regex.sub('', sql))
