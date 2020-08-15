@@ -21,9 +21,15 @@ if os.path.isfile(filepath):
 
 try:
     with connection.cursor() as cursor:
+        # Create backup_auto table ignoring warnings
+        cursor.execute('SET sql_notes = 0')
+        connection.commit()
+        cursor.execute('CREATE TABLE IF NOT EXISTS `backup_auto` (`text_lines` BLOB)')
+        connection.commit()
+        cursor.execute('SET sql_notes = 1')
+        connection.commit()
         # Empties backup_auto table
-        sql = 'DELETE FROM `backup_auto`'
-        cursor.execute(sql)
+        cursor.execute('DELETE FROM `backup_auto`')
         connection.commit()
         # Inserts first default lines
         cursor.execute('INSERT INTO `backup_auto` (`text_lines`) VALUES ("set foreign_key_checks=0;")')
@@ -39,14 +45,14 @@ try:
         # Get list of procedure's create command
         procedurescreate = []
         sql = 'SHOW CREATE PROCEDURE '
-        for i in range(1, len(procedureslist)):
-            cursor.execute(sql + procedureslist[i - 1]['Name'])
+        for i in range(0, len(procedureslist)):
+            cursor.execute(sql + procedureslist[i]['Name'])
             procedurescreate.append(cursor.fetchone())
         # Inserts Procedures lines
         sql = 'INSERT INTO `backup_auto` (`text_lines`) VALUES ("'
-        for i in range(1, len(procedurescreate)):
+        for i in range(0, len(procedurescreate)):
             cursor.execute('INSERT INTO `backup_auto` (`text_lines`) VALUES ("DELIMITER //")')
-            cursor.execute(sql + str(procedurescreate[i - 1]['Create Procedure']).replace('"', '\\"') + ' //")')
+            cursor.execute(sql + str(procedurescreate[i]['Create Procedure']).replace('"', '\\"') + ' //")')
             connection.commit()
             cursor.execute('INSERT INTO `backup_auto` (`text_lines`) VALUES ("DELIMITER ;")')
             insert_empty_line()
@@ -57,37 +63,37 @@ try:
         # Get list of table's create command
         tablescreate = []
         sql = 'SHOW CREATE TABLE '
-        for i in range(1, len(tableslist)):
-            cursor.execute(sql + tableslist[i - 1]['table_name'])
+        for i in range(0, len(tableslist)):
+            cursor.execute(sql + tableslist[i]['table_name'])
             tablescreate.append(cursor.fetchone())
         # Inserts Tables lines
         sql = 'INSERT INTO `backup_auto` (`text_lines`) VALUES ("'
-        for i in range(1, len(tablescreate)):
-            cursor.execute(sql + str(tablescreate[i - 1]['Create Table']).replace('"', '\\"') + ';")')
+        for i in range(0, len(tablescreate)):
+            cursor.execute(sql + str(tablescreate[i]['Create Table']).replace('"', '\\"').replace('\\r\\n','\\\\r\\\\n') + ';")')
             connection.commit()
             insert_empty_line()
-            tablename = str(tablescreate[i - 1]['Table'])
+            tablename = str(tablescreate[i]['Table'])
             tablebackuppath = 'c:/tempback/' + tablename
             terminate = ';'
             cursor.execute(sql + 'load data infile \\"' + tablebackuppath + '\\" into table ' + tablename + ' fields terminated by \\"' + terminate + '\\";")')
             connection.commit()
             insert_empty_line()
+            insert_empty_line()
         # Get list of triggers
-        insert_empty_line()
         sql = 'SHOW TRIGGERS'
         cursor.execute(sql)
         procedureslist = cursor.fetchall()
         # Get list of triggers's create command
         procedurescreate = []
         sql = 'SHOW CREATE TRIGGER '
-        for i in range(1, len(procedureslist)):
-            cursor.execute(sql + procedureslist[i - 1]['Trigger'])
+        for i in range(0, len(procedureslist)):
+            cursor.execute(sql + procedureslist[i]['Trigger'])
             procedurescreate.append(cursor.fetchone())
         # Inserts triggers lines
         sql = 'INSERT INTO `backup_auto` (`text_lines`) VALUES ("'
-        for i in range(1, len(procedurescreate)):
+        for i in range(0, len(procedurescreate)):
             cursor.execute('INSERT INTO `backup_auto` (`text_lines`) VALUES ("DELIMITER //")')
-            cursor.execute(sql + str(procedurescreate[i - 1]['SQL Original Statement']).replace('"', '\\"') + ' //")')
+            cursor.execute(sql + str(procedurescreate[i]['SQL Original Statement']).replace('"', '\\"') + ' //")')
             connection.commit()
             cursor.execute('INSERT INTO `backup_auto` (`text_lines`) VALUES ("DELIMITER ;")')
             insert_empty_line()
