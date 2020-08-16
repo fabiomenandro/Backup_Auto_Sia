@@ -57,8 +57,8 @@ try:
             cursor.execute('INSERT INTO `backup_auto` (`text_lines`) VALUES ("DELIMITER ;")')
             insert_empty_line()
         # Get list of tables
-        sql = 'SELECT table_name FROM information_schema.`TABLES` WHERE table_schema = "bdsia"'
-        cursor.execute(sql)
+        cursor.execute('SELECT table_name FROM information_schema.`TABLES` WHERE table_schema = "bdsia" and '
+                       'table_name <> "backup_auto" and table_name = "acerto"')
         tableslist = cursor.fetchall()
         # Get list of table's create command
         tablescreate = []
@@ -69,13 +69,17 @@ try:
         # Inserts Tables lines
         sql = 'INSERT INTO `backup_auto` (`text_lines`) VALUES ("'
         for i in range(0, len(tablescreate)):
-            cursor.execute(sql + str(tablescreate[i]['Create Table']).replace('"', '\\"').replace('\\r\\n','\\\\r\\\\n') + ';")')
+            cursor.execute(sql + str(tablescreate[i]['Create Table']).replace('"', '\\"').replace('\\r\\n',
+                                                                                                  '\\\\r\\\\n') + ';")')
             connection.commit()
             insert_empty_line()
             tablename = str(tablescreate[i]['Table'])
             tablebackuppath = 'c:/tempback/' + tablename
             terminate = ';'
-            cursor.execute(sql + 'load data infile \\"' + tablebackuppath + '\\" into table ' + tablename + ' fields terminated by \\"' + terminate + '\\";")')
+            cursor.execute(sql + 'load data infile \\"' + tablebackuppath + '\\" into table ' + tablename + 'fields '
+                                                                            'terminated by \\"' + terminate + '\\";")')
+            cursor.execute('select * into outfile %(path)s fields terminated by ";" from ' + tablename,
+                                                                                            {'path': tablebackuppath})
             connection.commit()
             insert_empty_line()
             insert_empty_line()
